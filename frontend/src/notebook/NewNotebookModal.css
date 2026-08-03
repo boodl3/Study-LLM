@@ -1,0 +1,67 @@
+.new-notebook-modal {
+  width: min(90vw, 420px);
+  padding: var(--space-6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  color: var(--text-primary);
+}
+
+.new-notebook-modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.new-notebook-modal h1 {
+  margin: 0 0 var(--space-5);
+  font-size: 2.4rem;
+  font-weight: 400;
+}
+
+.new-notebook-modal__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.new-notebook-modal input {
+  background: var(--bg-panel-strong);
+  border: none;
+  border-radius: 999px;
+  padding: var(--space-3) var(--space-5);
+  color: var(--text-primary);
+  font-family: var(--font-plain);
+  font-size: 1rem;
+}
+
+.new-notebook-modal input::placeholder {
+  color: var(--text-muted);
+}
+
+.new-notebook-modal__actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.new-notebook-modal__actions button {
+  flex: 1;
+  background: var(--bg-hover);
+  border: none;
+  border-radius: 999px;
+  padding: var(--space-3);
+  color: var(--text-primary);
+  font-family: var(--font-plain);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.new-notebook-modal__actions button:hover {
+  background: var(--border-strong);
+}
+
+.new-notebook-modal__actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

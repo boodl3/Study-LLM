@@ -1,0 +1,43 @@
+.home-page {
+  padding: var(--space-5);
+}
+
+.home-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-5);
+}
+
+.home-page__header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.home-page__new-button {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+}
+
+.home-page__new-button:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.home-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.home-page__empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: var(--space-6) 0;
+}

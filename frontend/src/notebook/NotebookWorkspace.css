@@ -1,0 +1,30 @@
+.notebook-workspace {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.notebook-workspace__sources {
+  width: 280px;
+  border-right: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.notebook-workspace__features {
+  width: 280px;
+  border-left: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.notebook-workspace__chat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-plain);
+}
+
+.notebook-workspace__features-empty {
+  color: var(--text-faint);
+  font-size: 0.9rem;
+}

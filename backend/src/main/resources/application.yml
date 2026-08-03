@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: study-llm-backend
+  servlet:
+    multipart:
+      max-file-size: 55MB
+      max-request-size: 55MB
+  datasource:
+    url: ${STUDYLLM_DB_URL:jdbc:postgresql://localhost:5432/studyllm}
+    username: ${STUDYLLM_DB_USER:studyllm}
+    password: ${STUDYLLM_DB_PASSWORD:studyllm}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+studyllm:
+  jwt:
+    secret: ${STUDYLLM_JWT_SECRET:}
+    expiration-minutes: ${STUDYLLM_JWT_EXPIRATION_MINUTES:1440}
+  ollama:
+    base-url: ${STUDYLLM_OLLAMA_BASE_URL:http://localhost:11434}
+    chat-model: ${STUDYLLM_CHAT_MODEL:qwen3:8b}
+    embedding-model: ${STUDYLLM_EMBEDDING_MODEL:nomic-embed-text}
+  chat:
+    retrieval-top-k: 5
+    relevance-max-distance: 0.6
+  upload:
+    max-file-size-bytes: 52428800
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    com.studyllm: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%X{notebookId}] [%X{sourceId}] %logger{36} - %msg%n"

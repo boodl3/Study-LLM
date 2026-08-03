@@ -1,0 +1,30 @@
+.collapsible-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+}
+
+.collapsible-panel--collapsed {
+  align-items: center;
+  padding-top: var(--space-2);
+}
+
+.collapsible-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.collapsible-panel__title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.collapsible-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3);
+}

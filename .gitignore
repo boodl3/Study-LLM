@@ -1,0 +1,19 @@
+.claude/
+.specify/
+specs/
+
+# Backend
+backend/target/
+*.class
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Env / IDE
+.env
+.env.*
+!.env.example
+.idea/
+*.iml
+.vscode/
