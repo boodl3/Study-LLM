@@ -30,6 +30,10 @@ public class NotebookSearchService {
     this.ownershipGuard = ownershipGuard;
   }
 
+  /**
+   * Returns the caller's notebooks whose title or source content matches the query; a blank
+   * query returns no results rather than everything.
+   */
   @Transactional
   public NotebookListResponse search(String query) {
     String term = query == null ? "" : query.trim();

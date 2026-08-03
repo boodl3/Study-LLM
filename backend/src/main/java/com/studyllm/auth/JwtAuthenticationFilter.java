@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+/** Per-request filter that authenticates a {@code Bearer} JWT and populates the security context. */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
@@ -20,6 +21,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     this.jwtService = jwtService;
   }
 
+  /**
+   * Extracts and validates the {@code Authorization: Bearer <token>} header, if present, and
+   * sets the authenticated user ID as the security context's principal before continuing the
+   * chain. Requests with no/invalid token simply proceed unauthenticated.
+   */
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)

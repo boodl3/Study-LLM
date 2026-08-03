@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PdfTextExtractor implements TextExtractor {
 
+  /** Extracts text page by page so each chunk can later cite a specific page number. */
   @Override
   public List<ExtractedSection> extract(InputStream in) throws IOException {
     List<ExtractedSection> sections = new ArrayList<>();

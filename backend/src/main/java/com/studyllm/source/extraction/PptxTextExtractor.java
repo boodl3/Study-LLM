@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PptxTextExtractor implements TextExtractor {
 
+  /** Extracts text shape by shape, one section per slide, skipping slides with no text shapes. */
   @Override
   public List<ExtractedSection> extract(InputStream in) throws IOException {
     List<ExtractedSection> sections = new ArrayList<>();

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+/** CRUD for sources within a notebook, plus dispatching newly uploaded files to async ingestion. */
 @Service
 public class SourceService {
 
@@ -40,6 +41,7 @@ public class SourceService {
     this.maxFileSizeBytes = maxFileSizeBytes;
   }
 
+  /** Lists a notebook's sources, most recently uploaded first. */
   @Transactional
   public SourceListResponse list(UUID notebookId) {
     requireOwnedNotebook(notebookId);
@@ -58,10 +60,15 @@ public class SourceService {
             .orElseThrow(() -> new NotFoundException("Source not found")));
   }
 
-  // Deliberately not @Transactional: the async ingestion pipeline dispatched below runs on
-  // another thread against its own connection, and must only see the just-saved Source row
-  // once it's actually committed — which requires each save here to commit on its own rather
-  // than all sharing one transaction that doesn't commit until this method returns.
+  /**
+   * Validates and stores an uploaded file, then kicks off async ingestion (extract/chunk/embed)
+   * and returns immediately with the new source in PROCESSING status.
+   *
+   * <p>Deliberately not @Transactional: the async ingestion pipeline dispatched below runs on
+   * another thread against its own connection, and must only see the just-saved Source row
+   * once it's actually committed — which requires each save here to commit on its own rather
+   * than all sharing one transaction that doesn't commit until this method returns.
+   */
   public UploadResponse upload(UUID notebookId, MultipartFile file) {
     Notebook notebook = requireOwnedNotebook(notebookId);
 
@@ -82,6 +89,7 @@ public class SourceService {
     return new UploadResponse(source.getId(), source.getFilename(), source.getStatus());
   }
 
+  /** Renames a source in place; the file content and ingestion state are untouched. */
   @Transactional
   public SourceDto rename(UUID notebookId, UUID sourceId, RenameSourceRequest request) {
     requireOwnedNotebook(notebookId);
@@ -94,6 +102,7 @@ public class SourceService {
     return toDto(sourceRepository.save(source));
   }
 
+  /** Deletes a source and (via cascade) its chunks. */
   @Transactional
   public void delete(UUID notebookId, UUID sourceId) {
     requireOwnedNotebook(notebookId);
@@ -112,6 +121,7 @@ public class SourceService {
     return trimmed;
   }
 
+  /** Sniffs the real file type from content (via Tika) rather than trusting the extension. */
   private Source.FileType detectFileType(byte[] content, String filename) {
     String mime = tika.detect(content);
     return switch (mime) {

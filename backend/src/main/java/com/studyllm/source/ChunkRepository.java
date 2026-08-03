@@ -47,6 +47,7 @@ public interface ChunkRepository extends JpaRepository<Chunk, UUID> {
       nativeQuery = true)
   boolean existsContentMatch(@Param("notebookId") UUID notebookId, @Param("term") String term);
 
+  /** Formats an embedding as the pgvector text literal (e.g. {@code "[0.1,0.2,0.3]"}) native queries expect. */
   static String toPgVectorLiteral(float[] embedding) {
     StringBuilder sb = new StringBuilder("[");
     for (int i = 0; i < embedding.length; i++) {

@@ -10,6 +10,7 @@ import org.hibernate.annotations.Array;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/** One retrievable slice of a source's extracted text, with its embedding for similarity search. */
 @Entity
 @Table(name = "chunks")
 public class Chunk {

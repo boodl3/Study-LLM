@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+/** REST CRUD for sources within a notebook, including multipart upload. */
 @RestController
 @RequestMapping("/api/v1/notebooks/{notebookId}/sources")
 public class SourceController {

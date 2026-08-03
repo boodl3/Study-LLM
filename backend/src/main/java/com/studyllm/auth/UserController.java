@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/** Authenticated self-service account management: profile updates and password changes. */
 @RestController
 @RequestMapping("/api/v1/users/me")
 public class UserController {

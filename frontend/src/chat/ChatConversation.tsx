@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { useChatHistory, type ChatMessage } from "../api/chat";
 import "./ChatConversation.css";
 
+// Splits on **bold** markers and renders the bracketed pieces as <strong>; everything else
+// passes through as plain text (the model only ever emphasizes with this one markdown construct).
 function renderFormattedContent(content: string) {
   return content
     .split(/(\*\*[^*]+\*\*)/g)

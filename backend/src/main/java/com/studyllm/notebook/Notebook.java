@@ -8,6 +8,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
+/** A user's notebook: a titled container for sources and their chat history. */
 @Entity
 @Table(name = "notebooks")
 public class Notebook {
@@ -57,6 +58,7 @@ public class Notebook {
     return lastActiveAt;
   }
 
+  /** Bumps {@code lastActiveAt} to now, used to keep the notebook list sorted by recent activity. */
   public void touch() {
     this.lastActiveAt = Instant.now();
   }

@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+/** Issues and validates the HMAC-signed JWTs used as bearer tokens for authenticated requests. */
 @Service
 public class JwtService {
 
@@ -29,6 +30,7 @@ public class JwtService {
     this.expiration = Duration.ofMinutes(expirationMinutes);
   }
 
+  /** Builds a signed token with the user ID as subject, expiring after the configured duration. */
   public String issueToken(UUID userId) {
     Instant now = Instant.now();
     return Jwts.builder()
@@ -39,6 +41,7 @@ public class JwtService {
         .compact();
   }
 
+  /** Verifies signature and expiry, returning the subject as a user ID, or empty if invalid/expired. */
   public Optional<UUID> validateAndGetUserId(String token) {
     try {
       String subject = Jwts.parser().verifyWith((javax.crypto.SecretKey) key).build()

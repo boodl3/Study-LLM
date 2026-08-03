@@ -29,6 +29,7 @@ public class EmbeddingClient {
     this.restClient = RestClient.create(properties.baseUrl());
   }
 
+  /** Requests a 768-dim embedding vector for the given text from Ollama; throws on any failure. */
   public float[] embed(String text) {
     try {
       EmbedResponse response =

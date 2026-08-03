@@ -22,6 +22,11 @@ public class RecursiveChunker {
   private static final Pattern PARAGRAPH_SPLIT = Pattern.compile("\\n\\s*\\n");
   private static final Pattern SENTENCE_SPLIT = Pattern.compile("(?<=[.!?])\\s+");
 
+  /**
+   * Greedily packs each section's text into chunks of ~1,200–2,000 chars: units (paragraph or
+   * smaller) are appended to a buffer until adding the next one would exceed the max, at which
+   * point the buffer is flushed as a chunk and a trailing overlap seeds the next one.
+   */
   public List<ChunkDraft> chunk(List<ExtractedSection> sections) {
     List<ChunkDraft> chunks = new ArrayList<>();
     int position = 0;
@@ -78,6 +83,10 @@ public class RecursiveChunker {
     return units;
   }
 
+  /**
+   * Returns the trailing ~12.5% of a just-flushed chunk (word-boundary aligned, capped at
+   * {@code maxLen}) to seed the next chunk with continuity context.
+   */
   private String overlapTail(String flushedChunk, int maxLen) {
     int overlapLen = Math.min((int) Math.round(flushedChunk.length() * OVERLAP_RATIO), maxLen);
     if (overlapLen <= 0 || overlapLen >= flushedChunk.length()) {

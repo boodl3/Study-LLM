@@ -24,6 +24,8 @@ export class ApiError extends Error {
   }
 }
 
+// Attaches the stored bearer token and JSON content-type (skipped for FormData uploads, which
+// need the browser-generated multipart boundary instead), then throws ApiError on non-2xx.
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const headers = new Headers(init?.headers);

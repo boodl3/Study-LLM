@@ -38,6 +38,8 @@ const STORED_USERNAME_KEY = "studyllm_username";
 const STORED_EMAIL_KEY = "studyllm_email";
 const STORED_USER_ID_KEY = "studyllm_user_id";
 
+// Holds auth state in memory, backed by localStorage so a page refresh doesn't log the user out
+// (the token itself lives separately, see api/client.ts).
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     userId: getToken() ? localStorage.getItem(STORED_USER_ID_KEY) : null,
@@ -45,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: getToken() ? localStorage.getItem(STORED_EMAIL_KEY) : null,
   });
 
+  // Persists a fresh login/signup response (token + profile) and syncs it into state.
   const applyAuth = useCallback((res: authApi.AuthResponse) => {
     setToken(res.token);
     localStorage.setItem(STORED_USER_ID_KEY, res.userId);

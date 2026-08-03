@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/** REST endpoints for a notebook's chat: reading history and asking a grounded question. */
 @RestController
 @RequestMapping("/api/v1/notebooks/{notebookId}/chat")
 public class ChatController {

@@ -4,6 +4,7 @@ import "./SearchBar.css";
 export function SearchBar({ onSearch }: { onSearch: (query: string) => void }) {
   const [value, setValue] = useState("");
 
+  // Debounce keystrokes 300ms before firing the search, so typing doesn't trigger a request per key.
   useEffect(() => {
     const timeout = setTimeout(() => onSearch(value), 300);
     return () => clearTimeout(timeout);

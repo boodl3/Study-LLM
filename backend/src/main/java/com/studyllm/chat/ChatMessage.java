@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/** One turn in a notebook's chat transcript: a user question or a grounded assistant answer. */
 @Entity
 @Table(name = "chat_messages")
 public class ChatMessage {
@@ -45,6 +46,7 @@ public class ChatMessage {
 
   protected ChatMessage() {}
 
+  /** Builds a USER-role message; no citations, since the user isn't answering from sources. */
   public static ChatMessage userMessage(UUID notebookId, String content) {
     ChatMessage m = new ChatMessage();
     m.notebookId = notebookId;
@@ -53,6 +55,10 @@ public class ChatMessage {
     return m;
   }
 
+  /**
+   * Builds an ASSISTANT-role message. {@code citedChunkIds} is null/empty and
+   * {@code notFoundInSources} is true when retrieval found nothing relevant.
+   */
   public static ChatMessage assistantMessage(
       UUID notebookId, String content, UUID[] citedChunkIds, boolean notFoundInSources) {
     ChatMessage m = new ChatMessage();

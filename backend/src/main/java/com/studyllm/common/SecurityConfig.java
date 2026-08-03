@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/** Stateless, JWT-only security: auth endpoints and the health check are public, everything else requires a valid bearer token. */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -21,6 +22,7 @@ public class SecurityConfig {
     return new BCryptPasswordEncoder();
   }
 
+  /** Disables session/CSRF (stateless API) and inserts the JWT filter ahead of Spring Security's own auth filter. */
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService) throws Exception {
     http.csrf(csrf -> csrf.disable())

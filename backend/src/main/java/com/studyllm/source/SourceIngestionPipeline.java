@@ -43,6 +43,11 @@ public class SourceIngestionPipeline {
     this.embeddingClient = embeddingClient;
   }
 
+  /**
+   * Runs the full pipeline for one uploaded file: extract text, chunk it, embed each chunk, and
+   * persist the chunks — flipping the source to READY on success or FAILED (with a reason) on
+   * any error. Runs on a separate thread ({@code @Async}) so upload requests return immediately.
+   */
   @Async
   @Transactional
   public void process(UUID sourceId, byte[] content, Source.FileType fileType) {

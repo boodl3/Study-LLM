@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Signup, login, and account-management for the local username/password auth scheme. */
 @Service
 public class AuthService {
 
@@ -34,6 +35,7 @@ public class AuthService {
     this.ownershipGuard = ownershipGuard;
   }
 
+  /** Creates a new account after checking password confirmation and username/email uniqueness, then issues a JWT. */
   public AuthResponse signup(SignupRequest request) {
     if (!request.password().equals(request.confirmPassword())) {
       throw new IllegalArgumentException("Passwords do not match");
@@ -51,6 +53,7 @@ public class AuthService {
         user.getId(), user.getUsername(), user.getEmail(), jwtService.issueToken(user.getId()));
   }
 
+  /** Verifies credentials (by username or email) and issues a JWT on success. */
   public AuthResponse login(LoginRequest request) {
     User user =
         userRepository
@@ -63,6 +66,7 @@ public class AuthService {
         user.getId(), user.getUsername(), user.getEmail(), jwtService.issueToken(user.getId()));
   }
 
+  /** Updates the current user's username/email after checking the new values aren't taken. */
   @Transactional
   public UserDto updateProfile(UpdateProfileRequest request) {
     UUID userId = ownershipGuard.currentUserId();
@@ -79,6 +83,7 @@ public class AuthService {
     return new UserDto(user.getId(), user.getUsername(), user.getEmail());
   }
 
+  /** Changes the current user's password after verifying the current one and the new confirmation. */
   @Transactional
   public void changePassword(ChangePasswordRequest request) {
     if (!request.newPassword().equals(request.confirmNewPassword())) {

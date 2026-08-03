@@ -10,6 +10,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
+/** An uploaded file within a notebook, tracked through its async ingestion lifecycle (PROCESSING → READY/FAILED). */
 @Entity
 @Table(name = "sources")
 public class Source {
@@ -66,11 +67,13 @@ public class Source {
     this.status = ProcessingStatus.PROCESSING;
   }
 
+  /** Transitions to READY once ingestion has produced at least one chunk. */
   public void markReady() {
     this.status = ProcessingStatus.READY;
     this.readyAt = Instant.now();
   }
 
+  /** Transitions to FAILED with a human-readable reason shown to the user. */
   public void markFailed(String reason) {
     this.status = ProcessingStatus.FAILED;
     this.failureReason = reason;

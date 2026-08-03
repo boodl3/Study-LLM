@@ -27,6 +27,7 @@ public class OllamaChatClient {
     this.restClient = RestClient.create(properties.baseUrl());
   }
 
+  /** Sends a prompt to Ollama's non-streaming generate endpoint and returns the trimmed answer. */
   public String generate(String prompt) {
     try {
       GenerateResponse response =

@@ -22,6 +22,7 @@ public class TextExtractorFactory {
     this.plainTextExtractor = plainTextExtractor;
   }
 
+  /** Picks the extractor matching a source's detected file type. */
   public TextExtractor forType(Source.FileType fileType) {
     return switch (fileType) {
       case PDF -> pdfTextExtractor;

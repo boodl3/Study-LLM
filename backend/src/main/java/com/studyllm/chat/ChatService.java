@@ -26,6 +26,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Answers questions strictly from a notebook's ingested sources: embed the question, pull the
+ * nearest chunks from READY sources only, and either say "not found" or ask the LLM to answer
+ * using just those excerpts (constitution: no answer without grounding).
+ */
 @Service
 @EnableConfigurationProperties(ChatProperties.class)
 public class ChatService {
@@ -62,6 +67,7 @@ public class ChatService {
     this.ownershipGuard = ownershipGuard;
   }
 
+  /** Returns the full chat transcript for a notebook the caller owns, oldest first. */
   @Transactional
   public ChatHistoryResponse getHistory(UUID notebookId) {
     Notebook notebook = requireOwnedNotebook(notebookId);
@@ -71,6 +77,11 @@ public class ChatService {
             .toList());
   }
 
+  /**
+   * Records the user's question, embeds it, retrieves the nearest chunks from this notebook's
+   * READY sources, and generates an answer grounded in those chunks — or a fixed "not found"
+   * reply if nothing relevant turns up. Both the question and the answer are persisted.
+   */
   @Transactional
   public ChatMessageResponse askQuestion(UUID notebookId, AskQuestionRequest request) {
     MDC.put("notebookId", notebookId.toString());
@@ -124,12 +135,18 @@ public class ChatService {
     }
   }
 
+  /** Looks up the notebook, scoped to the current user, or throws 404 if absent/not owned. */
   private Notebook requireOwnedNotebook(UUID notebookId) {
     return notebookRepository
         .findByIdAndOwnerId(notebookId, ownershipGuard.currentUserId())
         .orElseThrow(() -> new NotFoundException("Notebook not found"));
   }
 
+  /**
+   * Builds the grounded-answer prompt: instructs the model to answer only from the given chunks
+   * (labelled by source filename/section), never from outside knowledge or instructions embedded
+   * in the excerpts themselves.
+   */
   private String buildPrompt(String question, List<Chunk> chunks) {
     Map<UUID, Source> sourcesById = sourcesByIdFor(chunks);
     StringBuilder sb = new StringBuilder();
@@ -155,6 +172,7 @@ public class ChatService {
     return sb.toString();
   }
 
+  /** Maps a persisted message to its response DTO, resolving cited chunk IDs to filenames. */
   private ChatMessageResponse toResponse(ChatMessage message) {
     List<CitedSourceDto> citedSources = List.of();
     UUID[] citedChunkIds = message.getCitedChunkIds();
@@ -179,6 +197,7 @@ public class ChatService {
         message.getCreatedAt());
   }
 
+  /** Bulk-loads the distinct sources referenced by a list of chunks, keyed by source ID. */
   private Map<UUID, Source> sourcesByIdFor(List<Chunk> chunks) {
     List<UUID> sourceIds = chunks.stream().map(Chunk::getSourceId).distinct().toList();
     return sourceRepository.findAllById(sourceIds).stream()
