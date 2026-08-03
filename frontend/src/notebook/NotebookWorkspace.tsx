@@ -15,22 +15,18 @@ export function NotebookWorkspace() {
 
   return (
     <div className="notebook-workspace">
-      <div className="notebook-workspace__sources">
-        <CollapsiblePanel title="Sources" side="left">
-          <SourcesPanel notebookId={notebookId} />
-        </CollapsiblePanel>
-      </div>
+      <CollapsiblePanel title="Sources" side="left">
+        <SourcesPanel notebookId={notebookId} />
+      </CollapsiblePanel>
 
       <div className="notebook-workspace__chat">
         <ChatConversation notebookId={notebookId} />
         <ChatInput notebookId={notebookId} hasReadySources={hasReadySources} />
       </div>
 
-      <div className="notebook-workspace__features">
-        <CollapsiblePanel title="Features" side="right">
-          <div className="notebook-workspace__features-empty">Coming soon.</div>
-        </CollapsiblePanel>
-      </div>
+      <CollapsiblePanel title="Features" side="right">
+        <div className="notebook-workspace__features-empty">Coming soon.</div>
+      </CollapsiblePanel>
     </div>
   );
 }

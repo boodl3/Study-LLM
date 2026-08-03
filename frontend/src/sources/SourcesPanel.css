@@ -45,6 +45,60 @@
   font-size: 0.9rem;
 }
 
+.source-item__name-input {
+  flex: 1;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--bg-panel-strong);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 2px 5px;
+  margin: -2px -5px;
+  outline: none;
+  min-width: 0;
+}
+
+.source-item__name-input:focus {
+  border-color: var(--accent);
+}
+
+.source-item__menu-wrap {
+  position: relative;
+}
+
+.source-item__menu {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  z-index: 10;
+  min-width: 120px;
+}
+
+.source-item__menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.source-item__menu button:hover {
+  background: var(--bg-hover);
+}
+
+.source-item__menu button.danger {
+  color: var(--danger);
+}
+
 .source-item__status {
   font-size: 0.75rem;
   padding: 1px var(--space-2);

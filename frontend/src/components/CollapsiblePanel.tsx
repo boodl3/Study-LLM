@@ -17,9 +17,11 @@ export function CollapsiblePanel({
 }: CollapsiblePanelProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
+  const sideClass = side === "left" ? "collapsible-panel--left" : "collapsible-panel--right";
+
   if (collapsed) {
     return (
-      <div className="collapsible-panel collapsible-panel--collapsed">
+      <div className={`collapsible-panel ${sideClass} collapsible-panel--collapsed`}>
         <IconButton label={`Expand ${title}`} onClick={() => setCollapsed(false)}>
           {side === "left" ? "›" : "‹"}
         </IconButton>
@@ -28,7 +30,7 @@ export function CollapsiblePanel({
   }
 
   return (
-    <div className="collapsible-panel">
+    <div className={`collapsible-panel ${sideClass}`}>
       <div className="collapsible-panel__header">
         <span className="collapsible-panel__title">{title}</span>
         <IconButton label={`Collapse ${title}`} onClick={() => setCollapsed(true)}>

@@ -1,5 +1,13 @@
-import { useRef } from "react";
-import { useSources, useUploadSource, type Source } from "../api/sources";
+import { useRef, useState } from "react";
+import { IconButton } from "../components/IconButton";
+import { ConfirmDialog } from "../notebook/ConfirmDialog";
+import {
+  useDeleteSource,
+  useRenameSource,
+  useSources,
+  useUploadSource,
+  type Source,
+} from "../api/sources";
 import "./SourcesPanel.css";
 
 const STATUS_LABEL: Record<Source["status"], string> = {
@@ -8,20 +16,105 @@ const STATUS_LABEL: Record<Source["status"], string> = {
   FAILED: "Failed",
 };
 
-function SourceItem({ source }: { source: Source }) {
+function SourceItem({ source, notebookId }: { source: Source; notebookId: string }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [filename, setFilename] = useState(source.filename);
+  const renameSource = useRenameSource(notebookId);
+  const deleteSource = useDeleteSource(notebookId);
+
+  async function submitRename() {
+    const trimmed = filename.trim();
+    if (trimmed && trimmed !== source.filename) {
+      try {
+        await renameSource.mutateAsync({ id: source.id, filename: trimmed });
+      } catch {
+        setFilename(source.filename);
+      }
+    }
+    setRenaming(false);
+  }
+
+  function confirmDelete() {
+    deleteSource.mutate(source.id, { onSuccess: () => setConfirmingDelete(false) });
+  }
+
   return (
     <div className="source-item">
       <div className="source-item__row">
-        <span className="source-item__name" title={source.filename}>
-          {source.filename}
-        </span>
+        {renaming ? (
+          <input
+            className="source-item__name-input"
+            autoFocus
+            value={filename}
+            onChange={(e) => setFilename(e.target.value)}
+            onBlur={submitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitRename();
+              if (e.key === "Escape") {
+                setFilename(source.filename);
+                setRenaming(false);
+              }
+            }}
+          />
+        ) : (
+          <span className="source-item__name" title={source.filename}>
+            {source.filename}
+          </span>
+        )}
         <span className={`source-item__status source-item__status--${source.status.toLowerCase()}`}>
           {STATUS_LABEL[source.status]}
         </span>
+
+        <div className="source-item__menu-wrap">
+          <IconButton
+            label="Source options"
+            className="source-item__menu-trigger"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            ⋮
+          </IconButton>
+
+          {menuOpen && (
+            <div className="source-item__menu">
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setRenaming(true);
+                }}
+              >
+                Rename
+              </button>
+              <button
+                className="danger"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setConfirmingDelete(true);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+      {(renameSource.isError || deleteSource.isError) && (
+        <span className="source-item__reason">Something went wrong. Please try again.</span>
+      )}
       {source.status === "FAILED" && source.failureReason && (
         <span className="source-item__reason">{source.failureReason}</span>
       )}
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete source"
+        message={`Delete "${source.filename}"? This can't be undone.`}
+        confirmLabel="Delete"
+        submitting={deleteSource.isPending}
+        onCancel={() => setConfirmingDelete(false)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
@@ -59,7 +152,7 @@ export function SourcesPanel({ notebookId }: { notebookId: string }) {
       )}
 
       {sources?.map((source) => (
-        <SourceItem key={source.id} source={source} />
+        <SourceItem key={source.id} source={source} notebookId={notebookId} />
       ))}
     </div>
   );

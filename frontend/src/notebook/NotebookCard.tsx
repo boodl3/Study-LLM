@@ -3,18 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { GlassCard } from "../components/GlassCard";
 import { IconButton } from "../components/IconButton";
 import { useDeleteNotebook, useRenameNotebook, type Notebook } from "../api/notebooks";
+import { ConfirmDialog } from "./ConfirmDialog";
 import "./NotebookCard.css";
 
 export function NotebookCard({ notebook }: { notebook: Notebook }) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [title, setTitle] = useState(notebook.title);
   const renameNotebook = useRenameNotebook();
   const deleteNotebook = useDeleteNotebook();
 
   function handleOpen() {
-    if (!menuOpen && !renaming) navigate(`/notebooks/${notebook.id}`);
+    if (!menuOpen && !renaming && !confirmingDelete) navigate(`/notebooks/${notebook.id}`);
   }
 
   async function submitRename() {
@@ -31,15 +33,18 @@ export function NotebookCard({ notebook }: { notebook: Notebook }) {
 
   function handleDelete() {
     setMenuOpen(false);
-    if (window.confirm(`Delete "${notebook.title}"? This can't be undone.`)) {
-      deleteNotebook.mutate(notebook.id);
-    }
+    setConfirmingDelete(true);
+  }
+
+  function confirmDelete() {
+    deleteNotebook.mutate(notebook.id, { onSuccess: () => setConfirmingDelete(false) });
   }
 
   return (
     <GlassCard className="notebook-card" onClick={handleOpen}>
       {renaming ? (
         <input
+          className="notebook-card__title-input"
           autoFocus
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -90,6 +95,16 @@ export function NotebookCard({ notebook }: { notebook: Notebook }) {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete notebook"
+        message={`Delete "${notebook.title}"? This can't be undone.`}
+        confirmLabel="Delete"
+        submitting={deleteNotebook.isPending}
+        onCancel={() => setConfirmingDelete(false)}
+        onConfirm={confirmDelete}
+      />
     </GlassCard>
   );
 }

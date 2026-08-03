@@ -17,3 +17,7 @@ frontend/dist/
 .idea/
 *.iml
 .vscode/
+
+# Logs
+*.log
+test2.txt

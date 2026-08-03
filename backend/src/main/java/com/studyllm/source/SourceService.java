@@ -4,6 +4,7 @@ import com.studyllm.common.NotFoundException;
 import com.studyllm.common.OwnershipGuard;
 import com.studyllm.notebook.Notebook;
 import com.studyllm.notebook.NotebookRepository;
+import com.studyllm.source.dto.RenameSourceRequest;
 import com.studyllm.source.dto.SourceDto;
 import com.studyllm.source.dto.SourceListResponse;
 import com.studyllm.source.dto.UploadResponse;
@@ -79,6 +80,36 @@ public class SourceService {
     ingestionPipeline.process(source.getId(), content, fileType);
 
     return new UploadResponse(source.getId(), source.getFilename(), source.getStatus());
+  }
+
+  @Transactional
+  public SourceDto rename(UUID notebookId, UUID sourceId, RenameSourceRequest request) {
+    requireOwnedNotebook(notebookId);
+    String filename = requireNonBlankFilename(request.filename());
+    Source source =
+        sourceRepository
+            .findByIdAndNotebookId(sourceId, notebookId)
+            .orElseThrow(() -> new NotFoundException("Source not found"));
+    source.setFilename(filename);
+    return toDto(sourceRepository.save(source));
+  }
+
+  @Transactional
+  public void delete(UUID notebookId, UUID sourceId) {
+    requireOwnedNotebook(notebookId);
+    Source source =
+        sourceRepository
+            .findByIdAndNotebookId(sourceId, notebookId)
+            .orElseThrow(() -> new NotFoundException("Source not found"));
+    sourceRepository.delete(source);
+  }
+
+  private static String requireNonBlankFilename(String filename) {
+    String trimmed = filename == null ? "" : filename.trim();
+    if (trimmed.isEmpty()) {
+      throw new IllegalArgumentException("Filename must not be blank");
+    }
+    return trimmed;
   }
 
   private Source.FileType detectFileType(byte[] content, String filename) {

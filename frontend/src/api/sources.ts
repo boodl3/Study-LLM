@@ -44,3 +44,20 @@ export function useUploadSource(notebookId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: sourcesKey(notebookId) }),
   });
 }
+
+export function useRenameSource(notebookId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, filename }: { id: string; filename: string }) =>
+      apiClient.patch<Source>(`/notebooks/${notebookId}/sources/${id}`, { filename }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: sourcesKey(notebookId) }),
+  });
+}
+
+export function useDeleteSource(notebookId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete<void>(`/notebooks/${notebookId}/sources/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: sourcesKey(notebookId) }),
+  });
+}

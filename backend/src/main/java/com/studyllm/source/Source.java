@@ -88,6 +88,10 @@ public class Source {
     return filename;
   }
 
+  public void setFilename(String filename) {
+    this.filename = filename;
+  }
+
   public FileType getFileType() {
     return fileType;
   }
