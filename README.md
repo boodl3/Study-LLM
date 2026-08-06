@@ -6,6 +6,15 @@ citations, or an explicit "not found" response. See
 [specs/001-notebook-rag-chat/spec.md](specs/001-notebook-rag-chat/spec.md)
 for the full feature spec.
 
+## Documentation
+
+| Doc | Audience | Covers |
+|---|---|---|
+| [docs/requirements.md](docs/requirements.md) | Devs, testers | Functional/non-functional requirements, operating environment |
+| [docs/architecture.md](docs/architecture.md) | Devs | System structure, module layout, data/request flow, key design decisions |
+| [docs/technical.md](docs/technical.md) | Devs | API reference, algorithms (chunking, retrieval), database structure, configuration |
+| [docs/user-guide.md](docs/user-guide.md) | End users | Getting started, notebooks/sources/chat, FAQ, troubleshooting |
+
 ## Prerequisites
 
 - Java 21+, Maven
@@ -19,6 +28,68 @@ for the full feature spec.
   ollama pull qwen3:8b
   ollama pull nomic-embed-text
   ```
+
+## Data model
+
+```mermaid
+erDiagram
+    USERS ||--o{ NOTEBOOKS : owns
+    NOTEBOOKS ||--o{ SOURCES : contains
+    NOTEBOOKS ||--o{ CHAT_MESSAGES : has
+    SOURCES ||--o{ CHUNKS : "split into"
+
+    USERS {
+        uuid id PK
+        varchar email UK
+        varchar username UK
+        varchar password_hash
+        timestamptz created_at
+    }
+
+    NOTEBOOKS {
+        uuid id PK
+        uuid owner_id FK
+        varchar title
+        timestamptz created_at
+        timestamptz last_active_at
+    }
+
+    SOURCES {
+        uuid id PK
+        uuid notebook_id FK
+        varchar filename
+        varchar file_type
+        bigint file_size_bytes
+        varchar status
+        varchar failure_reason
+        timestamptz uploaded_at
+        timestamptz ready_at
+    }
+
+    CHUNKS {
+        uuid id PK
+        uuid source_id FK
+        text content
+        int position
+        varchar section_label
+        vector embedding "768-dim"
+    }
+
+    CHAT_MESSAGES {
+        uuid id PK
+        uuid notebook_id FK
+        varchar role
+        text content
+        uuid_array cited_chunk_ids "refs CHUNKS.id, no FK"
+        boolean not_found_in_sources
+        timestamptz created_at
+    }
+```
+
+`chat_messages.cited_chunk_ids` is a plain `UUID[]` pointing at `chunks.id`; it's not a real
+foreign key, so it's shown as a plain column rather than a relationship. See
+[`V1__init_schema.sql`](backend/src/main/resources/db/migration/V1__init_schema.sql) for the
+authoritative schema.
 
 ## Environment variables
 
