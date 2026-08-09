@@ -10,6 +10,9 @@ import com.studyllm.source.dto.SourceListResponse;
 import com.studyllm.source.dto.UploadResponse;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,12 +44,12 @@ public class SourceService {
     this.maxFileSizeBytes = maxFileSizeBytes;
   }
 
-  /** Lists a notebook's sources, most recently uploaded first. */
+  /** Lists a notebook's sources in display order. */
   @Transactional
   public SourceListResponse list(UUID notebookId) {
     requireOwnedNotebook(notebookId);
     return new SourceListResponse(
-        sourceRepository.findByNotebookIdOrderByUploadedAtDesc(notebookId).stream()
+        sourceRepository.findByNotebookIdOrderBySortOrderAscUploadedAtAsc(notebookId).stream()
             .map(this::toDto)
             .toList());
   }
@@ -70,6 +73,11 @@ public class SourceService {
    * than all sharing one transaction that doesn't commit until this method returns.
    */
   public UploadResponse upload(UUID notebookId, MultipartFile file) {
+    return upload(notebookId, file, null);
+  }
+
+  /** Same as {@link #upload(UUID, MultipartFile)}, tagging the source with its source folder. */
+  public UploadResponse upload(UUID notebookId, MultipartFile file, String folderName) {
     Notebook notebook = requireOwnedNotebook(notebookId);
 
     byte[] content = readBytes(file);
@@ -78,15 +86,63 @@ public class SourceService {
     }
     Source.FileType fileType = detectFileType(content, file.getOriginalFilename());
 
+    // ponytail: next sort_order is derived from the current count, so it can collide after a
+    // delete-then-upload race; the ORDER BY tiebreaks on uploaded_at so display stays sane.
+    // Upgrade to a DB sequence if concurrent uploads to the same notebook become common.
+    int sortOrder = sourceRepository.countByNotebookId(notebookId);
     Source source =
         sourceRepository.save(
-            new Source(notebookId, file.getOriginalFilename(), fileType, content.length));
+            new Source(
+                notebookId,
+                file.getOriginalFilename(),
+                fileType,
+                content.length,
+                blankToNull(folderName),
+                sortOrder));
     notebook.touch();
     notebookRepository.save(notebook);
 
     ingestionPipeline.process(source.getId(), content, fileType);
 
     return new UploadResponse(source.getId(), source.getFilename(), source.getStatus());
+  }
+
+  /**
+   * Persists a new display order for the notebook's sources. Ids not owned by the notebook are
+   * ignored; any of the notebook's sources missing from the list keep their existing order and
+   * sort after the reordered ones.
+   */
+  @Transactional
+  public SourceListResponse reorder(UUID notebookId, List<UUID> orderedIds) {
+    requireOwnedNotebook(notebookId);
+    List<Source> sources =
+        sourceRepository.findByNotebookIdOrderBySortOrderAscUploadedAtAsc(notebookId);
+    Map<UUID, Source> byId = new HashMap<>();
+    for (Source source : sources) {
+      byId.put(source.getId(), source);
+    }
+
+    int order = 0;
+    for (UUID id : orderedIds) {
+      Source source = byId.remove(id);
+      if (source != null) {
+        source.setSortOrder(order++);
+      }
+    }
+    for (Source leftover : byId.values()) {
+      leftover.setSortOrder(order++);
+    }
+    sourceRepository.saveAll(sources);
+
+    return list(notebookId);
+  }
+
+  private static String blankToNull(String value) {
+    if (value == null) {
+      return null;
+    }
+    String trimmed = value.trim();
+    return trimmed.isEmpty() ? null : trimmed;
   }
 
   /** Renames a source in place; the file content and ingestion state are untouched. */
@@ -162,6 +218,7 @@ public class SourceService {
         source.getFileType(),
         source.getStatus(),
         source.getFailureReason(),
-        source.getUploadedAt());
+        source.getUploadedAt(),
+        source.getFolderName());
   }
 }

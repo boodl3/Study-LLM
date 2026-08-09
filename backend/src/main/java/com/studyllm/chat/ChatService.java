@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,13 +78,22 @@ public class ChatService {
             .toList());
   }
 
+  /** Convenience overload for callers that don't need to observe streamed tokens (e.g. tests). */
+  public ChatMessageResponse askQuestion(UUID notebookId, AskQuestionRequest request) {
+    return askQuestion(notebookId, request, token -> {});
+  }
+
   /**
    * Records the user's question, embeds it, retrieves the nearest chunks from this notebook's
    * READY sources, and generates an answer grounded in those chunks — or a fixed "not found"
-   * reply if nothing relevant turns up. Both the question and the answer are persisted.
+   * reply if nothing relevant turns up. {@code onToken} is invoked with each piece of the answer
+   * as it's generated, so callers can stream it to the client instead of waiting for the whole
+   * (multi-minute, on local hardware) generation to finish. Both the question and the answer are
+   * persisted.
    */
   @Transactional
-  public ChatMessageResponse askQuestion(UUID notebookId, AskQuestionRequest request) {
+  public ChatMessageResponse askQuestion(
+      UUID notebookId, AskQuestionRequest request, Consumer<String> onToken) {
     MDC.put("notebookId", notebookId.toString());
     try {
       Notebook notebook = requireOwnedNotebook(notebookId);
@@ -112,11 +122,12 @@ public class ChatService {
 
       ChatMessage assistantMessage;
       if (relevant.isEmpty()) {
+        onToken.accept(NOT_FOUND_MESSAGE);
         assistantMessage = ChatMessage.assistantMessage(notebookId, NOT_FOUND_MESSAGE, null, true);
       } else {
         String answer;
         try {
-          answer = ollamaChatClient.generate(buildPrompt(request.question(), relevant));
+          answer = ollamaChatClient.generateStreaming(buildPrompt(request.question(), relevant), onToken);
         } catch (RuntimeException e) {
           log.error("Failed to generate a chat answer for notebook {}", notebookId, e);
           throw e;

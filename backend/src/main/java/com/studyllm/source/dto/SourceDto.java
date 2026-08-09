@@ -10,4 +10,5 @@ public record SourceDto(
     Source.FileType fileType,
     Source.ProcessingStatus status,
     String failureReason,
-    Instant uploadedAt) {}
+    Instant uploadedAt,
+    String folderName) {}

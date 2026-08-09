@@ -19,6 +19,11 @@ import org.springframework.test.web.servlet.MvcResult;
  * A notebook deleted while a chat request is in flight must not let that request succeed
  * (FR-021). The chat call's real Ollama generation step (multi-second) gives the concurrent
  * delete a wide, realistic window to land before the final {@code ChatMessage} insert.
+ *
+ * <p>The chat endpoint streams Server-Sent Events, so the HTTP status commits to 200 as soon as
+ * the first answer token arrives — well before the final persistence step this test races
+ * against. Failure is therefore observed as an {@code error} event in the SSE body, not a
+ * non-200 status; see {@code ChatController#askQuestion}.
  */
 class NotebookDeleteMidChatIT extends AbstractIntegrationTest {
 
@@ -61,9 +66,9 @@ class NotebookDeleteMidChatIT extends AbstractIntegrationTest {
         .andReturn();
 
     MvcResult chatResult = chatCall.get(30, TimeUnit.SECONDS);
-    int status = chatResult.getResponse().getStatus();
+    String body = chatResult.getResponse().getContentAsString();
 
-    assertThat(status).isNotEqualTo(200);
+    assertThat(body).contains("\"error\":true");
     assertThat(notebookRepository.findByIdAndOwnerId(notebook.getId(), userId)).isEmpty();
   }
 }

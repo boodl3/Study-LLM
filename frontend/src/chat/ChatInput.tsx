@@ -1,20 +1,18 @@
 import { useState, type FormEvent } from "react";
-import { useAskQuestion } from "../api/chat";
 import { ApiError } from "../api/client";
 import "./ChatInput.css";
 
 interface ChatInputProps {
-  notebookId: string;
   /** Whether the notebook has at least one READY source (spec FR-018). Defaults to enabled so
    * this component works standalone against seeded data before the Sources panel exists. */
   hasReadySources?: boolean;
+  isAsking: boolean;
+  ask: (question: string) => Promise<void>;
+  error: Error | null;
 }
 
-export function ChatInput({ notebookId, hasReadySources = true }: ChatInputProps) {
+export function ChatInput({ hasReadySources = true, isAsking, ask, error }: ChatInputProps) {
   const [question, setQuestion] = useState("");
-  const [blockedMessage, setBlockedMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const askQuestion = useAskQuestion(notebookId);
 
   if (!hasReadySources) {
     return (
@@ -28,37 +26,28 @@ export function ChatInput({ notebookId, hasReadySources = true }: ChatInputProps
     e.preventDefault();
     const trimmed = question.trim();
     if (!trimmed) return;
-    setBlockedMessage(null);
-    setErrorMessage(null);
-    try {
-      await askQuestion.mutateAsync(trimmed);
-      setQuestion("");
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 422) {
-        setBlockedMessage("Upload a source before asking a question.");
-      } else {
-        setErrorMessage("Couldn't get an answer. Please try again.");
-      }
-    }
+    setQuestion("");
+    await ask(trimmed);
   }
 
-  if (blockedMessage) {
-    return <div className="chat-input__prompt">{blockedMessage}</div>;
+  const isBlocked = error instanceof ApiError && error.status === 422;
+  if (isBlocked) {
+    return <div className="chat-input__prompt">Upload a source before asking a question.</div>;
   }
 
   return (
     <div>
-      {errorMessage && <div className="chat-input__error">{errorMessage}</div>}
+      {error && <div className="chat-input__error">Couldn't get an answer. Please try again.</div>}
       <form className="chat-input" onSubmit={handleSubmit}>
         <input
           type="text"
           placeholder="Ask a question about this notebook…"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          disabled={askQuestion.isPending}
+          disabled={isAsking}
         />
-        <button type="submit" disabled={askQuestion.isPending || !question.trim()}>
-          {askQuestion.isPending ? "Asking…" : "Ask"}
+        <button type="submit" disabled={isAsking || !question.trim()}>
+          {isAsking ? "Asking…" : "Ask"}
         </button>
       </form>
     </div>

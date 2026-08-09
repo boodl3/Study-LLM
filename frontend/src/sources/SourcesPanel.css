@@ -4,7 +4,13 @@
   gap: var(--space-3);
 }
 
+.sources-panel__add-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
 .sources-panel__add {
+  flex: 1;
   background: var(--bg-panel-strong);
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-md);
@@ -128,4 +134,68 @@
 .sources-panel__empty {
   color: var(--text-faint);
   font-size: 0.9rem;
+}
+
+.sources-panel__drag-row {
+  cursor: grab;
+}
+
+.sources-panel__drag-row--dragging {
+  opacity: 0.4;
+}
+
+/* Snappier reorder preview than the browser's 250ms default while dragging sources around. */
+::view-transition-group(*) {
+  animation-duration: 150ms;
+}
+
+.source-folder__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.source-folder__trigger:hover {
+  background: var(--bg-hover);
+}
+
+.source-folder__chevron {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  color: var(--text-muted);
+}
+
+.source-folder__chevron--open {
+  transform: rotate(90deg);
+}
+
+.source-folder__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-folder__count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.source-folder__files {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: var(--space-3);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--border-subtle);
 }

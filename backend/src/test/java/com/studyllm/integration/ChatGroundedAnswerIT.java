@@ -52,7 +52,7 @@ class ChatGroundedAnswerIT extends AbstractIntegrationTest {
             .getContentAsString();
     Duration elapsed = Duration.between(start, Instant.now());
 
-    ChatMessageResponse response = objectMapper.readValue(body, ChatMessageResponse.class);
+    ChatMessageResponse response = parseFinalChatMessage(body);
 
     assertThat(elapsed).isLessThanOrEqualTo(Duration.ofSeconds(15));
     assertThat(response.notFoundInSources()).isFalse();

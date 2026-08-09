@@ -57,14 +57,32 @@ public class Source {
   @Column(name = "ready_at")
   private Instant readyAt;
 
+  @Column(name = "folder_name")
+  private String folderName;
+
+  @Column(name = "sort_order", nullable = false)
+  private int sortOrder;
+
   protected Source() {}
 
   public Source(UUID notebookId, String filename, FileType fileType, long fileSizeBytes) {
+    this(notebookId, filename, fileType, fileSizeBytes, null, 0);
+  }
+
+  public Source(
+      UUID notebookId,
+      String filename,
+      FileType fileType,
+      long fileSizeBytes,
+      String folderName,
+      int sortOrder) {
     this.notebookId = notebookId;
     this.filename = filename;
     this.fileType = fileType;
     this.fileSizeBytes = fileSizeBytes;
     this.status = ProcessingStatus.PROCESSING;
+    this.folderName = folderName;
+    this.sortOrder = sortOrder;
   }
 
   /** Transitions to READY once ingestion has produced at least one chunk. */
@@ -117,5 +135,17 @@ public class Source {
 
   public Instant getReadyAt() {
     return readyAt;
+  }
+
+  public String getFolderName() {
+    return folderName;
+  }
+
+  public int getSortOrder() {
+    return sortOrder;
+  }
+
+  public void setSortOrder(int sortOrder) {
+    this.sortOrder = sortOrder;
   }
 }

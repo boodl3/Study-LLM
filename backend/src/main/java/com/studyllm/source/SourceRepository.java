@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SourceRepository extends JpaRepository<Source, UUID> {
-  List<Source> findByNotebookIdOrderByUploadedAtDesc(UUID notebookId);
+  List<Source> findByNotebookIdOrderBySortOrderAscUploadedAtAsc(UUID notebookId);
 
   Optional<Source> findByIdAndNotebookId(UUID id, UUID notebookId);
 

@@ -43,7 +43,7 @@ class ChatNotFoundIT extends AbstractIntegrationTest {
             .getResponse()
             .getContentAsString();
 
-    ChatMessageResponse response = objectMapper.readValue(body, ChatMessageResponse.class);
+    ChatMessageResponse response = parseFinalChatMessage(body);
 
     assertThat(response.notFoundInSources()).isTrue();
     assertThat(response.citedSources()).isEmpty();

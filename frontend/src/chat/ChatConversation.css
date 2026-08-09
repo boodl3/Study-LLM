@@ -58,3 +58,38 @@
   border-radius: var(--radius-sm);
   padding: 2px var(--space-2);
 }
+
+.chat-thinking {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.chat-thinking__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.4;
+  animation: chat-thinking-bounce 1s infinite ease-in-out;
+}
+
+.chat-thinking__dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.chat-thinking__dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes chat-thinking-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}

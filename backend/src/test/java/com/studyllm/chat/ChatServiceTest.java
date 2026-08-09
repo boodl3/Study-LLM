@@ -73,7 +73,7 @@ class ChatServiceTest {
         .isInstanceOf(NoReadySourcesException.class);
 
     verify(embeddingClient, never()).embed(anyString());
-    verify(ollamaChatClient, never()).generate(anyString());
+    verify(ollamaChatClient, never()).generateStreaming(anyString(), any());
   }
 
   @Test
@@ -90,7 +90,7 @@ class ChatServiceTest {
 
     assertThat(response.notFoundInSources()).isTrue();
     assertThat(response.citedSources()).isEmpty();
-    verify(ollamaChatClient, never()).generate(anyString());
+    verify(ollamaChatClient, never()).generateStreaming(anyString(), any());
   }
 
   @Test

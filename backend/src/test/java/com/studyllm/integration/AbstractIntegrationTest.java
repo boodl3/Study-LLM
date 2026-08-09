@@ -1,11 +1,13 @@
 package com.studyllm.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.studyllm.ai.EmbeddingClient;
 import com.studyllm.auth.JwtService;
 import com.studyllm.auth.User;
 import com.studyllm.auth.UserRepository;
 import com.studyllm.chat.ChatMessageRepository;
+import com.studyllm.chat.dto.ChatMessageResponse;
 import com.studyllm.notebook.NotebookRepository;
 import com.studyllm.source.ChunkRepository;
 import com.studyllm.source.SourceRepository;
@@ -69,5 +71,21 @@ public abstract class AbstractIntegrationTest {
 
   protected String tokenFor(UUID userId) {
     return jwtService.issueToken(userId);
+  }
+
+  /**
+   * The chat endpoint streams Server-Sent Events (one {@code data: {...}} line per generated
+   * token, then a final {@code done} event carrying the persisted message) — extracts that final
+   * message from the raw SSE body captured by MockMvc.
+   */
+  protected ChatMessageResponse parseFinalChatMessage(String sseBody) throws Exception {
+    for (String event : sseBody.split("\n\n")) {
+      if (event.isBlank()) continue;
+      JsonNode payload = objectMapper.readTree(event.substring(event.indexOf(':') + 1).trim());
+      if (payload.path("done").asBoolean(false)) {
+        return objectMapper.treeToValue(payload.get("message"), ChatMessageResponse.class);
+      }
+    }
+    throw new AssertionError("No 'done' event found in SSE response: " + sseBody);
   }
 }

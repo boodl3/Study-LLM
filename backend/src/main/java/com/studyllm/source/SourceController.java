@@ -1,6 +1,7 @@
 package com.studyllm.source;
 
 import com.studyllm.source.dto.RenameSourceRequest;
+import com.studyllm.source.dto.ReorderSourcesRequest;
 import com.studyllm.source.dto.SourceDto;
 import com.studyllm.source.dto.SourceListResponse;
 import com.studyllm.source.dto.UploadResponse;
@@ -42,8 +43,17 @@ public class SourceController {
 
   @PostMapping
   public ResponseEntity<UploadResponse> upload(
-      @PathVariable UUID notebookId, @RequestParam("file") MultipartFile file) {
-    return ResponseEntity.status(HttpStatus.ACCEPTED).body(sourceService.upload(notebookId, file));
+      @PathVariable UUID notebookId,
+      @RequestParam("file") MultipartFile file,
+      @RequestParam(value = "folder", required = false) String folder) {
+    return ResponseEntity.status(HttpStatus.ACCEPTED)
+        .body(sourceService.upload(notebookId, file, folder));
+  }
+
+  @PatchMapping("/reorder")
+  public SourceListResponse reorder(
+      @PathVariable UUID notebookId, @Valid @RequestBody ReorderSourcesRequest request) {
+    return sourceService.reorder(notebookId, request.orderedIds());
   }
 
   @PatchMapping("/{sourceId}")

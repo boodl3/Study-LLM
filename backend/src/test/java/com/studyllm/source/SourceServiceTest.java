@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.studyllm.common.OwnershipGuard;
 import com.studyllm.notebook.Notebook;
 import com.studyllm.notebook.NotebookRepository;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class SourceServiceTest {
@@ -96,5 +98,28 @@ class SourceServiceTest {
             org.mockito.ArgumentMatchers.any(),
             org.mockito.ArgumentMatchers.eq(PDF_HEADER),
             org.mockito.ArgumentMatchers.eq(Source.FileType.PDF));
+  }
+
+  @Test
+  void reorder_appliesRequestedOrderAndAppendsUnlistedSourcesAtEnd() {
+    Source a = new Source(notebookId, "a.txt", Source.FileType.TXT, 1);
+    Source b = new Source(notebookId, "b.txt", Source.FileType.TXT, 1);
+    Source c = new Source(notebookId, "c.txt", Source.FileType.TXT, 1);
+    UUID aId = UUID.randomUUID();
+    UUID bId = UUID.randomUUID();
+    UUID cId = UUID.randomUUID();
+    ReflectionTestUtils.setField(a, "id", aId);
+    ReflectionTestUtils.setField(b, "id", bId);
+    ReflectionTestUtils.setField(c, "id", cId);
+    when(sourceRepository.findByNotebookIdOrderBySortOrderAscUploadedAtAsc(notebookId))
+        .thenReturn(List.of(a, b, c));
+
+    // b is left out of the requested order, so it should be appended after c and a.
+    sourceService.reorder(notebookId, List.of(cId, aId));
+
+    assertThat(c.getSortOrder()).isZero();
+    assertThat(a.getSortOrder()).isEqualTo(1);
+    assertThat(b.getSortOrder()).isEqualTo(2);
+    verify(sourceRepository).saveAll(org.mockito.ArgumentMatchers.anyList());
   }
 }
