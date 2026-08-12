@@ -169,6 +169,32 @@ public class SourceService {
     sourceRepository.delete(source);
   }
 
+  /** Renames a folder by retagging every source that carries its folderName. */
+  @Transactional
+  public SourceListResponse renameFolder(UUID notebookId, String folderName, String newFolderName) {
+    requireOwnedNotebook(notebookId);
+    String trimmed = requireNonBlankFilename(newFolderName);
+    List<Source> sources = requireFolderSources(notebookId, folderName);
+    sources.forEach(source -> source.setFolderName(trimmed));
+    sourceRepository.saveAll(sources);
+    return list(notebookId);
+  }
+
+  /** Deletes every source in a folder (and, via cascade, their chunks). */
+  @Transactional
+  public void deleteFolder(UUID notebookId, String folderName) {
+    requireOwnedNotebook(notebookId);
+    sourceRepository.deleteAll(requireFolderSources(notebookId, folderName));
+  }
+
+  private List<Source> requireFolderSources(UUID notebookId, String folderName) {
+    List<Source> sources = sourceRepository.findByNotebookIdAndFolderName(notebookId, folderName);
+    if (sources.isEmpty()) {
+      throw new NotFoundException("Folder not found");
+    }
+    return sources;
+  }
+
   private static String requireNonBlankFilename(String filename) {
     String trimmed = filename == null ? "" : filename.trim();
     if (trimmed.isEmpty()) {

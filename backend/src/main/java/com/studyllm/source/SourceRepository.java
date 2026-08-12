@@ -12,5 +12,7 @@ public interface SourceRepository extends JpaRepository<Source, UUID> {
 
   List<Source> findByNotebookIdAndStatus(UUID notebookId, Source.ProcessingStatus status);
 
+  List<Source> findByNotebookIdAndFolderName(UUID notebookId, String folderName);
+
   int countByNotebookId(UUID notebookId);
 }

@@ -1,7 +1,7 @@
 .sources-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-1);
 }
 
 .sources-panel__add-row {
@@ -77,12 +77,17 @@
   position: absolute;
   top: 28px;
   right: 0;
-  background: var(--bg-panel-strong);
+  /* A floating popover over busy list content needs a near-opaque base — the page-level glass
+     tokens (rgba white over uniform --bg-base) are too sheer here and let content show through. */
+  background: rgba(13, 15, 20, 0.95);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   overflow: hidden;
   z-index: 10;
   min-width: 120px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .source-item__menu button {
@@ -138,6 +143,13 @@
 
 .sources-panel__drag-row {
   cursor: grab;
+  position: relative;
+}
+
+/* Each row gets its own view-transition (see viewTransitionNameFor), which promotes it to a
+   stacking context — so a row's z-index:10 menu can't otherwise paint over a later sibling row. */
+.sources-panel__drag-row:has(.source-item__menu) {
+  z-index: 20;
 }
 
 .sources-panel__drag-row--dragging {
@@ -149,12 +161,20 @@
   animation-duration: 150ms;
 }
 
+.source-folder__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+}
+
 .source-folder__trigger {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) 0;
   background: none;
   border: none;
   border-radius: var(--radius-sm);

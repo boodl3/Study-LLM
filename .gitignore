@@ -6,6 +6,9 @@ specs/
 backend/target/
 *.class
 
+# Tesseract language data — 22MB binary, fetched at setup rather than committed (see README)
+backend/tessdata/
+
 # Frontend
 frontend/node_modules/
 frontend/dist/

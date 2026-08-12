@@ -39,6 +39,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
 
   if (!res.ok) {
+    // A stored token can go stale (expired, or the backend restarted with a fresh JWT secret)
+    // without the UI ever noticing, since isAuthenticated only checks that *something* is
+    // stored — every subsequent request would otherwise fail silently with no way to recover
+    // short of manually clearing storage. Force back to a clean login instead.
+    if ((res.status === 401 || res.status === 403) && path !== "/auth/login") {
+      setToken(null);
+      window.location.href = "/login";
+    }
     const body = await res.json().catch(() => null);
     throw new ApiError(res.status, body);
   }

@@ -3,7 +3,9 @@ import { flushSync } from "react-dom";
 import { IconButton } from "../components/IconButton";
 import { ConfirmDialog } from "../notebook/ConfirmDialog";
 import {
+  useDeleteFolder,
   useDeleteSource,
+  useRenameFolder,
   useRenameSource,
   useReorderSources,
   useSources,
@@ -131,17 +133,105 @@ function FolderGroup({
   notebookId: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [name, setName] = useState(folderName);
+  const renameFolder = useRenameFolder(notebookId);
+  const deleteFolder = useDeleteFolder(notebookId);
+
+  async function submitRename() {
+    const trimmed = name.trim();
+    if (trimmed && trimmed !== folderName) {
+      try {
+        await renameFolder.mutateAsync({ folderName, newFolderName: trimmed });
+      } catch {
+        setName(folderName);
+      }
+    }
+    setRenaming(false);
+  }
+
+  function confirmDelete() {
+    deleteFolder.mutate(folderName, { onSuccess: () => setConfirmingDelete(false) });
+  }
+
   return (
     <div className="source-folder">
-      <button className="source-folder__trigger" onClick={() => setOpen((o) => !o)}>
-        <span className={`source-folder__chevron${open ? " source-folder__chevron--open" : ""}`}>
-          ›
-        </span>
-        <span className="source-folder__name">{folderName}</span>
-        <span className="source-folder__count">
-          {sources.length} file{sources.length === 1 ? "" : "s"}
-        </span>
-      </button>
+      <div className="source-folder__row">
+        {renaming ? (
+          <input
+            className="source-item__name-input"
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={submitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitRename();
+              if (e.key === "Escape") {
+                setName(folderName);
+                setRenaming(false);
+              }
+            }}
+          />
+        ) : (
+          <button className="source-folder__trigger" onClick={() => setOpen((o) => !o)}>
+            <span className={`source-folder__chevron${open ? " source-folder__chevron--open" : ""}`}>
+              ›
+            </span>
+            <span className="source-folder__name">{folderName}</span>
+            <span className="source-folder__count">
+              {sources.length} file{sources.length === 1 ? "" : "s"}
+            </span>
+          </button>
+        )}
+
+        <div className="source-item__menu-wrap">
+          <IconButton
+            label="Folder options"
+            className="source-item__menu-trigger"
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            ⋮
+          </IconButton>
+
+          {menuOpen && (
+            <div className="source-item__menu">
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setRenaming(true);
+                }}
+              >
+                Rename
+              </button>
+              <button
+                className="danger"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setConfirmingDelete(true);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      {(renameFolder.isError || deleteFolder.isError) && (
+        <span className="source-item__reason">Something went wrong. Please try again.</span>
+      )}
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete folder"
+        message={`Delete "${folderName}" and its ${sources.length} file${sources.length === 1 ? "" : "s"}? This can't be undone.`}
+        confirmLabel="Delete"
+        submitting={deleteFolder.isPending}
+        onCancel={() => setConfirmingDelete(false)}
+        onConfirm={confirmDelete}
+      />
+
       {open && (
         <div className="source-folder__files">
           {sources.map((source) => (

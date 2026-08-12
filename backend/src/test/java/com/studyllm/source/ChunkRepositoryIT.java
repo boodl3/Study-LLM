@@ -36,12 +36,47 @@ class ChunkRepositoryIT extends AbstractIntegrationTest {
     Chunk orthogonal = chunkRepository.save(new Chunk(readySource.getId(), "far", 1, null, unitVector(1)));
     chunkRepository.save(new Chunk(processingSource.getId(), "should be excluded", 0, null, unitVector(0)));
 
+    // radius 0 so this stays a test of distance/status filtering alone — the orthogonal chunk sits
+    // at the adjacent position and would otherwise be pulled in as a neighbour.
     List<Chunk> results =
         chunkRepository.findNearestInReadySources(
-            notebook.getId(), ChunkRepository.toPgVectorLiteral(queryVector), 0.5, 10);
+            notebook.getId(), ChunkRepository.toPgVectorLiteral(queryVector), 0.5, 10, 0);
 
     assertThat(results).extracting(Chunk::getId).containsExactly(exactMatch.getId());
     assertThat(results).extracting(Chunk::getId).doesNotContain(orthogonal.getId());
+  }
+
+  /**
+   * The real failure this guards against: a lecture theorem split across a page break, where the
+   * continuation page carries none of the heading that makes it match the question and so never
+   * ranks high enough to be retrieved on its own.
+   */
+  @Test
+  void widensEachHitToItsAdjacentChunks() {
+    UUID userId = createUserAndGetId();
+    Notebook notebook = notebookRepository.save(new Notebook(userId, "Discrete Maths"));
+    Source source =
+        sourceRepository.save(new Source(notebook.getId(), "lecture.pdf", Source.FileType.PDF, 100));
+    source.markReady();
+    sourceRepository.save(source);
+
+    Chunk headingPage =
+        chunkRepository.save(new Chunk(source.getId(), "identities 1-6", 14, "page 15", unitVector(0)));
+    Chunk continuationPage =
+        chunkRepository.save(new Chunk(source.getId(), "identities 7-12", 15, "page 16", unitVector(1)));
+    Chunk unrelated =
+        chunkRepository.save(new Chunk(source.getId(), "unrelated", 30, "page 31", unitVector(1)));
+
+    List<Chunk> results =
+        chunkRepository.findNearestInReadySources(
+            notebook.getId(), ChunkRepository.toPgVectorLiteral(unitVector(0)), 0.5, 10, 1);
+
+    // The continuation is orthogonal to the query — only adjacency rescues it.
+    assertThat(results).extracting(Chunk::getId).contains(headingPage.getId(), continuationPage.getId());
+    // ...but adjacency must not drag in an equally-distant chunk elsewhere in the document.
+    assertThat(results).extracting(Chunk::getId).doesNotContain(unrelated.getId());
+    // Document order, so a split section reads continuously in the prompt.
+    assertThat(results).extracting(Chunk::getPosition).containsExactly(14, 15);
   }
 
   @Test
@@ -62,7 +97,7 @@ class ChunkRepositoryIT extends AbstractIntegrationTest {
 
     List<Chunk> resultsForA =
         chunkRepository.findNearestInReadySources(
-            notebookA.getId(), ChunkRepository.toPgVectorLiteral(unitVector(0)), 0.5, 10);
+            notebookA.getId(), ChunkRepository.toPgVectorLiteral(unitVector(0)), 0.5, 10, 1);
 
     assertThat(resultsForA).hasSize(1);
     assertThat(resultsForA.get(0).getSourceId()).isEqualTo(sourceA.getId());

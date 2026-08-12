@@ -1,5 +1,6 @@
 package com.studyllm.source;
 
+import com.studyllm.source.dto.RenameFolderRequest;
 import com.studyllm.source.dto.RenameSourceRequest;
 import com.studyllm.source.dto.ReorderSourcesRequest;
 import com.studyllm.source.dto.SourceDto;
@@ -67,6 +68,21 @@ public class SourceController {
   @DeleteMapping("/{sourceId}")
   public ResponseEntity<Void> delete(@PathVariable UUID notebookId, @PathVariable UUID sourceId) {
     sourceService.delete(notebookId, sourceId);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PatchMapping("/folders/{folderName}")
+  public SourceListResponse renameFolder(
+      @PathVariable UUID notebookId,
+      @PathVariable String folderName,
+      @Valid @RequestBody RenameFolderRequest request) {
+    return sourceService.renameFolder(notebookId, folderName, request.folderName());
+  }
+
+  @DeleteMapping("/folders/{folderName}")
+  public ResponseEntity<Void> deleteFolder(
+      @PathVariable UUID notebookId, @PathVariable String folderName) {
+    sourceService.deleteFolder(notebookId, folderName);
     return ResponseEntity.noContent().build();
   }
 }

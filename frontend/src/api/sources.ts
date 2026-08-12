@@ -85,3 +85,23 @@ export function useDeleteSource(notebookId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: sourcesKey(notebookId) }),
   });
 }
+
+export function useRenameFolder(notebookId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ folderName, newFolderName }: { folderName: string; newFolderName: string }) =>
+      apiClient.patch(`/notebooks/${notebookId}/sources/folders/${encodeURIComponent(folderName)}`, {
+        folderName: newFolderName,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: sourcesKey(notebookId) }),
+  });
+}
+
+export function useDeleteFolder(notebookId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (folderName: string) =>
+      apiClient.delete<void>(`/notebooks/${notebookId}/sources/folders/${encodeURIComponent(folderName)}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: sourcesKey(notebookId) }),
+  });
+}

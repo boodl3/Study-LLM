@@ -25,9 +25,18 @@ studyllm:
     base-url: ${STUDYLLM_OLLAMA_BASE_URL:http://localhost:11434}
     chat-model: ${STUDYLLM_CHAT_MODEL:qwen3:8b}
     embedding-model: ${STUDYLLM_EMBEDDING_MODEL:nomic-embed-text}
+    vision-model: ${STUDYLLM_VISION_MODEL:llava:7b}
+    ocr-concurrency: ${STUDYLLM_OCR_CONCURRENCY:4}
+  ocr:
+    # Directory holding eng.traineddata. If it's missing or unreadable, OCR degrades to the
+    # Ollama vision model instead of failing — see README for the one-line download.
+    tessdata-path: ${STUDYLLM_TESSDATA_PATH:tessdata}
   chat:
     retrieval-top-k: 5
     relevance-max-distance: 0.6
+    # Adjacent chunks pulled in either direction around each hit, so a section split across a
+    # page break isn't answered from only half of itself. 0 disables the widening.
+    retrieval-neighbor-radius: 1
   upload:
     max-file-size-bytes: 52428800
 

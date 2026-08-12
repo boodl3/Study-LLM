@@ -47,7 +47,7 @@ class ChatServiceTest {
 
   @BeforeEach
   void setUp() {
-    ChatProperties chatProperties = new ChatProperties(5, 0.6);
+    ChatProperties chatProperties = new ChatProperties(5, 0.6, 1);
     chatService =
         new ChatService(
             notebookRepository,
@@ -82,7 +82,7 @@ class ChatServiceTest {
         .thenReturn(List.of(new Source(notebookId, "syllabus.pdf", Source.FileType.PDF, 1000)));
     when(embeddingClient.embed(anyString())).thenReturn(new float[] {0.1f, 0.2f});
     when(chunkRepository.findNearestInReadySources(
-            eq(notebookId), anyString(), anyDouble(), anyInt()))
+            eq(notebookId), anyString(), anyDouble(), anyInt(), anyInt()))
         .thenReturn(List.of());
 
     var response =

@@ -141,6 +141,10 @@ public class Source {
     return folderName;
   }
 
+  public void setFolderName(String folderName) {
+    this.folderName = folderName;
+  }
+
   public int getSortOrder() {
     return sortOrder;
   }

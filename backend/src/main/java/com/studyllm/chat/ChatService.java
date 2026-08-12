@@ -118,7 +118,8 @@ public class ChatService {
               notebookId,
               ChunkRepository.toPgVectorLiteral(queryEmbedding),
               chatProperties.relevanceMaxDistance(),
-              chatProperties.retrievalTopK());
+              chatProperties.retrievalTopK(),
+              chatProperties.retrievalNeighborRadius());
 
       ChatMessage assistantMessage;
       if (relevant.isEmpty()) {
