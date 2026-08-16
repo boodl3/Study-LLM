@@ -178,7 +178,7 @@ docker run -d --name studyllm-postgres \
 
 # Backend (separate terminal)
 cd backend
-STUDYLLM_JWT_SECRET=dev-only-secret-change-me mvn spring-boot:run
+STUDYLLM_JWT_SECRET=dev-only-secret-change-me-please-this-is-32bytes-plus mvn spring-boot:run
 
 # Frontend (separate terminal)
 cd frontend

@@ -34,6 +34,7 @@ class SourceServiceTest {
   @Mock private NotebookRepository notebookRepository;
   @Mock private SourceRepository sourceRepository;
   @Mock private SourceIngestionPipeline ingestionPipeline;
+  @Mock private WebsiteFetcher websiteFetcher;
   @Mock private OwnershipGuard ownershipGuard;
 
   private SourceService sourceService;
@@ -43,7 +44,8 @@ class SourceServiceTest {
   @BeforeEach
   void setUp() {
     sourceService =
-        new SourceService(notebookRepository, sourceRepository, ingestionPipeline, ownershipGuard, 50L);
+        new SourceService(
+            notebookRepository, sourceRepository, ingestionPipeline, websiteFetcher, ownershipGuard, 50L);
     lenient().when(ownershipGuard.currentUserId()).thenReturn(userId);
     lenient()
         .when(notebookRepository.findByIdAndOwnerId(notebookId, userId))
@@ -98,6 +100,48 @@ class SourceServiceTest {
             org.mockito.ArgumentMatchers.any(),
             org.mockito.ArgumentMatchers.eq(PDF_HEADER),
             org.mockito.ArgumentMatchers.eq(Source.FileType.PDF));
+  }
+
+  @Test
+  void addWebsite_usesPageTitleAsFilenameAndQueuesProcessing() {
+    byte[] html = "<html><head><title>Bio Notes</title></head><body><p>hi</p></body></html>".getBytes();
+    when(websiteFetcher.fetch("https://example.com/notes", 50L)).thenReturn(html);
+    when(sourceRepository.save(org.mockito.ArgumentMatchers.any(Source.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    var response = sourceService.addWebsite(notebookId, "https://example.com/notes", null);
+
+    assertThat(response.filename()).isEqualTo("Bio Notes");
+    assertThat(response.status()).isEqualTo(Source.ProcessingStatus.PROCESSING);
+    verify(ingestionPipeline)
+        .process(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.eq(html),
+            org.mockito.ArgumentMatchers.eq(Source.FileType.URL));
+  }
+
+  @Test
+  void addWebsite_fallsBackToUrlWhenPageHasNoTitle() {
+    byte[] html = "<html><body><p>hi</p></body></html>".getBytes();
+    when(websiteFetcher.fetch("https://example.com/notes", 50L)).thenReturn(html);
+    when(sourceRepository.save(org.mockito.ArgumentMatchers.any(Source.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    var response = sourceService.addWebsite(notebookId, "https://example.com/notes", null);
+
+    assertThat(response.filename()).isEqualTo("https://example.com/notes");
+  }
+
+  @Test
+  void addWebsite_propagatesFetchFailureWithoutSavingASource() {
+    when(websiteFetcher.fetch(org.mockito.ArgumentMatchers.eq("not a url"), org.mockito.ArgumentMatchers.anyLong()))
+        .thenThrow(new IllegalArgumentException("Not a valid URL"));
+
+    assertThatThrownBy(() -> sourceService.addWebsite(notebookId, "not a url", null))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Not a valid URL");
+
+    verify(sourceRepository, never()).save(org.mockito.ArgumentMatchers.any());
   }
 
   @Test

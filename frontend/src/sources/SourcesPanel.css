@@ -4,6 +4,12 @@
   gap: var(--space-1);
 }
 
+.sources-panel__add-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .sources-panel__add-row {
   display: flex;
   gap: var(--space-2);
@@ -27,6 +33,15 @@
 
 .sources-panel__add input {
   display: none;
+}
+
+.sources-panel__add--website {
+  font-family: inherit;
+}
+
+.sources-panel__add--website:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .source-item {

@@ -6,7 +6,7 @@ export type SourceStatus = "PROCESSING" | "READY" | "FAILED";
 export interface Source {
   id: string;
   filename: string;
-  fileType: "PDF" | "DOCX" | "PPTX" | "TXT" | "MD";
+  fileType: "PDF" | "DOCX" | "PPTX" | "TXT" | "MD" | "URL";
   status: SourceStatus;
   failureReason: string | null;
   uploadedAt: string;
@@ -43,6 +43,15 @@ export function useUploadSource(notebookId: string) {
       if (folderName) formData.append("folder", folderName);
       return apiClient.post(`/notebooks/${notebookId}/sources`, formData);
     },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: sourcesKey(notebookId) }),
+  });
+}
+
+export function useAddWebsite(notebookId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ url, folderName }: { url: string; folderName?: string }) =>
+      apiClient.post(`/notebooks/${notebookId}/sources/website`, { url, folder: folderName }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: sourcesKey(notebookId) }),
   });
 }

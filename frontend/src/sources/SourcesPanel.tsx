@@ -2,7 +2,9 @@ import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { IconButton } from "../components/IconButton";
 import { ConfirmDialog } from "../notebook/ConfirmDialog";
+import { AddWebsiteModal } from "./AddWebsiteModal";
 import {
+  useAddWebsite,
   useDeleteFolder,
   useDeleteSource,
   useRenameFolder,
@@ -305,10 +307,12 @@ function withReorderAnimation(update: () => void) {
 export function SourcesPanel({ notebookId }: { notebookId: string }) {
   const { data: sources, isLoading } = useSources(notebookId);
   const uploadSource = useUploadSource(notebookId);
+  const addWebsite = useAddWebsite(notebookId);
   const reorderSources = useReorderSources(notebookId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importingFolder, setImportingFolder] = useState(false);
   const [folderError, setFolderError] = useState(false);
+  const [websiteModalOpen, setWebsiteModalOpen] = useState(false);
   const [dragKey, setDragKey] = useState<string | null>(null);
   const [orderOverride, setOrderOverride] = useState<string[] | null>(null);
 
@@ -336,6 +340,13 @@ export function SourcesPanel({ notebookId }: { notebookId: string }) {
     } finally {
       setImportingFolder(false);
     }
+  }
+
+  function handleAddWebsite(url: string) {
+    addWebsite.mutate(
+      { url },
+      { onSuccess: () => setWebsiteModalOpen(false) },
+    );
   }
 
   const busy = uploadSource.isPending || importingFolder;
@@ -388,30 +399,50 @@ export function SourcesPanel({ notebookId }: { notebookId: string }) {
 
   return (
     <div className="sources-panel">
-      <div className="sources-panel__add-row">
-        <label className="sources-panel__add">
-          {uploadSource.isPending && !importingFolder ? "Uploading…" : "+ Add source"}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={SUPPORTED_EXTENSIONS.join(",")}
-            onChange={handleFileChange}
+      <div className="sources-panel__add-group">
+        <div className="sources-panel__add-row">
+          <label className="sources-panel__add">
+            {uploadSource.isPending && !importingFolder ? "Uploading…" : "+ Add source"}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={SUPPORTED_EXTENSIONS.join(",")}
+              onChange={handleFileChange}
+              disabled={busy}
+            />
+          </label>
+          <label className="sources-panel__add">
+            {importingFolder ? "Importing…" : "+ Add folder"}
+            <input
+              type="file"
+              /* @ts-expect-error non-standard attributes for directory selection */
+              webkitdirectory=""
+              directory=""
+              multiple
+              onChange={handleFolderChange}
+              disabled={busy}
+            />
+          </label>
+        </div>
+        <div className="sources-panel__add-row">
+          <button
+            type="button"
+            className="sources-panel__add sources-panel__add--website"
             disabled={busy}
-          />
-        </label>
-        <label className="sources-panel__add">
-          {importingFolder ? "Importing…" : "+ Add folder"}
-          <input
-            type="file"
-            /* @ts-expect-error non-standard attributes for directory selection */
-            webkitdirectory=""
-            directory=""
-            multiple
-            onChange={handleFolderChange}
-            disabled={busy}
-          />
-        </label>
+            onClick={() => setWebsiteModalOpen(true)}
+          >
+            + Add Website
+          </button>
+        </div>
       </div>
+
+      <AddWebsiteModal
+        open={websiteModalOpen}
+        submitting={addWebsite.isPending}
+        error={addWebsite.error}
+        onCancel={() => setWebsiteModalOpen(false)}
+        onConfirm={handleAddWebsite}
+      />
 
       {isLoading && <div className="sources-panel__empty">Loading…</div>}
       {!isLoading && sources && sources.length === 0 && (

@@ -1,5 +1,6 @@
 package com.studyllm.source;
 
+import com.studyllm.source.dto.AddWebsiteRequest;
 import com.studyllm.source.dto.RenameFolderRequest;
 import com.studyllm.source.dto.RenameSourceRequest;
 import com.studyllm.source.dto.ReorderSourcesRequest;
@@ -49,6 +50,13 @@ public class SourceController {
       @RequestParam(value = "folder", required = false) String folder) {
     return ResponseEntity.status(HttpStatus.ACCEPTED)
         .body(sourceService.upload(notebookId, file, folder));
+  }
+
+  @PostMapping("/website")
+  public ResponseEntity<UploadResponse> addWebsite(
+      @PathVariable UUID notebookId, @Valid @RequestBody AddWebsiteRequest request) {
+    return ResponseEntity.status(HttpStatus.ACCEPTED)
+        .body(sourceService.addWebsite(notebookId, request.url(), request.folder()));
   }
 
   @PatchMapping("/reorder")

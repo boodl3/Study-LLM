@@ -20,7 +20,8 @@ public class Source {
     DOCX,
     PPTX,
     TXT,
-    MD
+    MD,
+    URL
   }
 
   public enum ProcessingStatus {

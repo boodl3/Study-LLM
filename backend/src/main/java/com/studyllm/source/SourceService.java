@@ -8,6 +8,7 @@ import com.studyllm.source.dto.RenameSourceRequest;
 import com.studyllm.source.dto.SourceDto;
 import com.studyllm.source.dto.SourceListResponse;
 import com.studyllm.source.dto.UploadResponse;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
@@ -15,18 +16,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.tika.Tika;
+import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-/** CRUD for sources within a notebook, plus dispatching newly uploaded files to async ingestion. */
+/** CRUD for sources within a notebook, plus dispatching newly uploaded files/websites to async ingestion. */
 @Service
 public class SourceService {
 
   private final NotebookRepository notebookRepository;
   private final SourceRepository sourceRepository;
   private final SourceIngestionPipeline ingestionPipeline;
+  private final WebsiteFetcher websiteFetcher;
   private final OwnershipGuard ownershipGuard;
   private final long maxFileSizeBytes;
   private final Tika tika = new Tika();
@@ -35,11 +38,13 @@ public class SourceService {
       NotebookRepository notebookRepository,
       SourceRepository sourceRepository,
       SourceIngestionPipeline ingestionPipeline,
+      WebsiteFetcher websiteFetcher,
       OwnershipGuard ownershipGuard,
       @Value("${studyllm.upload.max-file-size-bytes}") long maxFileSizeBytes) {
     this.notebookRepository = notebookRepository;
     this.sourceRepository = sourceRepository;
     this.ingestionPipeline = ingestionPipeline;
+    this.websiteFetcher = websiteFetcher;
     this.ownershipGuard = ownershipGuard;
     this.maxFileSizeBytes = maxFileSizeBytes;
   }
@@ -105,6 +110,47 @@ public class SourceService {
     ingestionPipeline.process(source.getId(), content, fileType);
 
     return new UploadResponse(source.getId(), source.getFilename(), source.getStatus());
+  }
+
+  /**
+   * Fetches a web page and adds it as a source, same as {@link #upload}: validates and stores
+   * synchronously, then kicks off async ingestion and returns immediately in PROCESSING status.
+   */
+  public UploadResponse addWebsite(UUID notebookId, String url, String folderName) {
+    Notebook notebook = requireOwnedNotebook(notebookId);
+
+    byte[] content = websiteFetcher.fetch(url, maxFileSizeBytes);
+    String filename = pageTitleOrUrl(content, url);
+
+    int sortOrder = sourceRepository.countByNotebookId(notebookId);
+    Source source =
+        sourceRepository.save(
+            new Source(
+                notebookId,
+                filename,
+                Source.FileType.URL,
+                content.length,
+                blankToNull(folderName),
+                sortOrder));
+    notebook.touch();
+    notebookRepository.save(notebook);
+
+    ingestionPipeline.process(source.getId(), content, Source.FileType.URL);
+
+    return new UploadResponse(source.getId(), source.getFilename(), source.getStatus());
+  }
+
+  /** Uses the page's <title> as the source's display name, falling back to the URL itself. */
+  private static String pageTitleOrUrl(byte[] content, String url) {
+    try {
+      String title = Jsoup.parse(new ByteArrayInputStream(content), null, "").title();
+      if (!title.isBlank()) {
+        return title.trim();
+      }
+    } catch (Exception ignored) {
+      // Fall through to the URL below.
+    }
+    return url.trim();
   }
 
   /**

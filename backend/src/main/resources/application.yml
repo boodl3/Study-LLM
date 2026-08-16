@@ -55,5 +55,3 @@ management:
 logging:
   level:
     com.studyllm: INFO
-  pattern:
-    console: "%d{HH:mm:ss.SSS} %-5level [%X{notebookId}] [%X{sourceId}] %logger{36} - %msg%n"

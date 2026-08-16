@@ -10,16 +10,19 @@ public class TextExtractorFactory {
   private final DocxTextExtractor docxTextExtractor;
   private final PptxTextExtractor pptxTextExtractor;
   private final PlainTextExtractor plainTextExtractor;
+  private final WebsiteTextExtractor websiteTextExtractor;
 
   public TextExtractorFactory(
       PdfTextExtractor pdfTextExtractor,
       DocxTextExtractor docxTextExtractor,
       PptxTextExtractor pptxTextExtractor,
-      PlainTextExtractor plainTextExtractor) {
+      PlainTextExtractor plainTextExtractor,
+      WebsiteTextExtractor websiteTextExtractor) {
     this.pdfTextExtractor = pdfTextExtractor;
     this.docxTextExtractor = docxTextExtractor;
     this.pptxTextExtractor = pptxTextExtractor;
     this.plainTextExtractor = plainTextExtractor;
+    this.websiteTextExtractor = websiteTextExtractor;
   }
 
   /** Picks the extractor matching a source's detected file type. */
@@ -29,6 +32,7 @@ public class TextExtractorFactory {
       case DOCX -> docxTextExtractor;
       case PPTX -> pptxTextExtractor;
       case TXT, MD -> plainTextExtractor;
+      case URL -> websiteTextExtractor;
     };
   }
 }
