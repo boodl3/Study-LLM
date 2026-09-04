@@ -1,0 +1,54 @@
+name: study-llm
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: studyllm
+      POSTGRES_USER: studyllm
+      POSTGRES_PASSWORD: ${STUDYLLM_DB_PASSWORD:-studyllm}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studyllm -d studyllm"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      STUDYLLM_DB_URL: jdbc:postgresql://postgres:5432/studyllm
+      STUDYLLM_DB_USER: studyllm
+      STUDYLLM_DB_PASSWORD: ${STUDYLLM_DB_PASSWORD:-studyllm}
+      # JwtService throws at startup if this is blank; :? fails `up` with a message instead.
+      STUDYLLM_JWT_SECRET: ${STUDYLLM_JWT_SECRET:?set STUDYLLM_JWT_SECRET in .env (32+ chars, see .env.example)}
+      # Ollama runs on the host, not in the stack, so it keeps GPU access. Overridable
+      # because another Docker/Swarm stack can publish its own Ollama on 11434 and shadow
+      # the native one - see the Troubleshooting section of the README.
+      STUDYLLM_OLLAMA_BASE_URL: ${STUDYLLM_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      STUDYLLM_CHAT_MODEL: ${STUDYLLM_CHAT_MODEL:-qwen3:8b}
+      STUDYLLM_EMBEDDING_MODEL: ${STUDYLLM_EMBEDDING_MODEL:-nomic-embed-text}
+      STUDYLLM_VISION_MODEL: ${STUDYLLM_VISION_MODEL:-llava:7b}
+    extra_hosts:
+      # Resolves host.docker.internal on Linux; harmless on Docker Desktop.
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        # Not `started`: Flyway runs on boot and ddl-auto=validate makes a missed migration a
+        # hard startup failure, so the backend must not race Postgres's first-boot init.
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
