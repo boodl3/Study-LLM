@@ -165,7 +165,7 @@ section reads continuously in the prompt.
 | `STUDYLLM_CHAT_MODEL` | no | `qwen3:8b` | Ollama chat/generation model |
 | `STUDYLLM_EMBEDDING_MODEL` | no | `nomic-embed-text` | Ollama embedding model |
 | `STUDYLLM_VISION_MODEL` | no | `llava:7b` | Ollama vision model, used only as an OCR fallback |
-| `STUDYLLM_TESSDATA_PATH` | no | `tessdata` | Directory holding `eng.traineddata` (relative to the backend working directory) |
+| `STUDYLLM_TESSDATA_PATH` | no | `tessdata` | Directory holding `eng.traineddata` (relative to the backend working directory). The Docker image installs Tesseract system-wide and sets this to `/usr/share/tesseract-ocr/5/tessdata` |
 | `STUDYLLM_OCR_CONCURRENCY` | no | `4` | Images OCR'd in parallel. Set to `1` if OCR falls back to the vision model on a CPU-only Ollama, where concurrent requests contend rather than parallelise |
 
 ## Run locally
@@ -194,6 +194,45 @@ curl http://localhost:8080/actuator/health
 
 Open the frontend dev server URL printed by `npm run dev` (proxies `/api` to
 `localhost:8080`).
+
+## Run with Docker
+
+Builds the backend and frontend as images and brings them up with Postgres in one command.
+Ollama stays **on the host** — it is deliberately not containerized so it keeps GPU access.
+
+```bash
+cp .env.example .env          # then set STUDYLLM_JWT_SECRET (openssl rand -base64 48)
+docker compose up -d --build
+```
+
+Open <http://localhost:3000>.
+
+Requires Docker 23+ (BuildKit) and a host Ollama with `qwen3:8b`, `nomic-embed-text` and
+`llava:7b` pulled. **Start Ollama with `OLLAMA_HOST=0.0.0.0`** — bound only to loopback it is
+unreachable from `host.docker.internal`, and uploads/chat then hang in `PROCESSING` exactly as
+in the port-11434 case below.
+
+The stack publishes **one** port: nginx on 3000, which serves the built SPA and reverse-proxies
+`/api/` to the backend. Postgres and the backend are reachable only from inside the compose
+network, so they never collide with a host-native Postgres on 5432 or `mvn spring-boot:run` on
+8080 — you can run the containerized and native stacks side by side. Notebooks and sources live
+in the `pgdata` volume, which is separate from any database you were using natively.
+
+If you previously ran the `studyllm-postgres` container from [Run locally](#run-locally), remove
+it (`docker rm -f studyllm-postgres`); it holds unrelated data and competes for port 5432.
+Logs go to stdout (`docker compose logs -f backend`) and, additionally, to `logs/` inside the
+backend container, which is discarded when the container is removed.
+
+```bash
+docker compose logs -f backend
+docker compose exec postgres psql -U studyllm studyllm
+docker compose down            # stop; data survives
+docker compose down -v         # stop and DELETE all notebooks
+```
+
+Deliberately not included, each a decision rather than an oversight: no Ollama service (host GPU),
+no Swarm/`deploy:` config (constitution Phase 5), no resource limits, no read-only root
+filesystem — uploads spool through `/tmp` and Tess4J extracts natives there.
 
 ## Testing
 
